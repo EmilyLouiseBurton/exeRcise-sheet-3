@@ -91,8 +91,77 @@ a)  Load the `pixar_films` dataset into R. Clean the dataset by removing
     films without a title. Inspect the variable `film_rating`. What are
     the possible values and what do they mean? Create a factor variable
     for the film rating. Why is this appropriate?
+    
+```r
+library(tidyverse)
+library(tidytuesdayR)
 
-<!-- -->
+# Load data
+tuesdata <- tidytuesdayR::tt_load('2025-03-11')
+pixar_films <- tuesdata$pixar_films
+public_response <- tuesdata$public_response
+
+# Clean pixar_films by removing films without a title
+pixar_films <- pixar_films %>% filter(!is.na(title))
+
+# Inspect film_rating variable
+unique(pixar_films$film_rating)
+
+# Convert film_rating to factor
+pixar_films <- pixar_films %>%
+  mutate(film_rating = factor(film_rating))
+
+# Identify film series by keywords
+series_keywords <- c("Toy Story", "Cars", "Finding", "Incredibles")
+
+pixar_films <- pixar_films %>%
+  mutate(
+    series = case_when(
+      str_detect(title, "Toy Story") ~ "Toy Story",
+      str_detect(title, "Cars") ~ "Cars",
+      str_detect(title, "Finding") ~ "Finding",
+      str_detect(title, "Incredibles") ~ "Incredibles",
+      TRUE ~ NA_character_
+    )
+  )
+
+film_series_df <- pixar_films %>%
+  filter(!is.na(series)) %>%
+  group_by(series) %>%
+  summarise(
+    films = paste(title, collapse = ", "),
+    num_films = n(),
+    .groups = "drop"
+  )
+
+print(film_series_df)
+
+# Convert cinema_score to ordered factor and merge
+cinema_levels <- c("F", "D-", "D", "D+", "C-", "C", "C+", "B-", "B", "B+", "A-", "A", "A+")
+public_response <- public_response %>%
+  mutate(cinema_score = factor(cinema_score, levels = cinema_levels, ordered = TRUE))
+
+combined_df <- pixar_films %>%
+  left_join(public_response, by = "title")
+
+# Plot audience scores for films in series
+series_df <- combined_df %>%
+  filter(!is.na(series)) %>%
+  arrange(series, release_date) %>%
+  mutate(title = factor(title, levels = unique(title)))
+
+library(ggplot2)
+ggplot(series_df, aes(x = series, y = audience_score, fill = title)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.9)) +
+  labs(
+    title = "Audience Scores for Pixar Film Series",
+    x = "Film Series",
+    y = "Audience Score",
+    fill = "Film Title"
+  ) +
+  theme_minimal()
+```
+
 
 b)  Inspect the film titles manually. Which films form a film series? A
     film series can be identified by a common word in the titles of the
