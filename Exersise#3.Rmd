@@ -92,75 +92,38 @@ a)  Load the `pixar_films` dataset into R. Clean the dataset by removing
     the possible values and what do they mean? Create a factor variable
     for the film rating. Why is this appropriate?
     
-```r
+```{r}
 library(tidyverse)
-library(tidytuesdayR)
+library(readr)
+library(dplyr)
 
-# Load data
-tuesdata <- tidytuesdayR::tt_load('2025-03-11')
-pixar_films <- tuesdata$pixar_films
-public_response <- tuesdata$public_response
+# Load data directly from GitHub
+pixar_films <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/main/data/2025/2025-03-11/pixar_films.csv')
+public_response <- read_csv('https://raw.githubusercontent.com/rforddatascience/tidytuesday/main/data/2025/2025-03-11/public_response.csv')
 
-# Clean pixar_films by removing films without a title
-pixar_films <- pixar_films %>% filter(!is.na(title))
+# Clean pixar_films: remove films without a title
+pixar_films <- pixar_films %>% filter(!is.na(film))
 
-# Inspect film_rating variable
-unique(pixar_films$film_rating)
+# film_rating variable: what are the possible values?
+ratings <- unique(pixar_films$film_rating)
+print(ratings)
 
-# Convert film_rating to factor
+# Explanation of film_rating values:
+# "G"   - General audiences, suitable for all ages.
+# "PG"  - Parental guidance suggested.
+# "N/A" - Not available or not rated.
+
+# Convert film_rating to a factor
 pixar_films <- pixar_films %>%
   mutate(film_rating = factor(film_rating))
 
-# Identify film series by keywords
-series_keywords <- c("Toy Story", "Cars", "Finding", "Incredibles")
+# Check first rows
+head(pixar_films)
 
-pixar_films <- pixar_films %>%
-  mutate(
-    series = case_when(
-      str_detect(title, "Toy Story") ~ "Toy Story",
-      str_detect(title, "Cars") ~ "Cars",
-      str_detect(title, "Finding") ~ "Finding",
-      str_detect(title, "Incredibles") ~ "Incredibles",
-      TRUE ~ NA_character_
-    )
-  )
+# The film_rating variable represents categories (e.g., “G”, “PG”, “N/A”) that classify films into groups rather than numeric values. Factors are the appropriate data type in R for categorical variables because they allow statistical functions and plots to correctly treat these values as categories.
 
-film_series_df <- pixar_films %>%
-  filter(!is.na(series)) %>%
-  group_by(series) %>%
-  summarise(
-    films = paste(title, collapse = ", "),
-    num_films = n(),
-    .groups = "drop"
-  )
-
-print(film_series_df)
-
-# Convert cinema_score to ordered factor and merge
-cinema_levels <- c("F", "D-", "D", "D+", "C-", "C", "C+", "B-", "B", "B+", "A-", "A", "A+")
-public_response <- public_response %>%
-  mutate(cinema_score = factor(cinema_score, levels = cinema_levels, ordered = TRUE))
-
-combined_df <- pixar_films %>%
-  left_join(public_response, by = "title")
-
-# Plot audience scores for films in series
-series_df <- combined_df %>%
-  filter(!is.na(series)) %>%
-  arrange(series, release_date) %>%
-  mutate(title = factor(title, levels = unique(title)))
-
-library(ggplot2)
-ggplot(series_df, aes(x = series, y = audience_score, fill = title)) +
-  geom_bar(stat = "identity", position = position_dodge(width = 0.9)) +
-  labs(
-    title = "Audience Scores for Pixar Film Series",
-    x = "Film Series",
-    y = "Audience Score",
-    fill = "Film Title"
-  ) +
-  theme_minimal()
 ```
+
 
 
 b)  Inspect the film titles manually. Which films form a film series? A
@@ -169,12 +132,67 @@ b)  Inspect the film titles manually. Which films form a film series? A
     e.g. "Despicable Me" and "Despicable Me 2". Create a dataframe which
     displays a list of the different series with the titles of the films
     and how many films belong to the series. Output the dataframe.
+    
+```{r}
+library(tidyverse)
+library(stringr)
 
+
+colnames(pixar_films)
+print(pixar_films$film)
+
+pixar_films <- pixar_films %>%
+  mutate(series = case_when(
+    str_detect(film, "Toy Story") ~ "Toy Story",
+    str_detect(film, "Cars") ~ "Cars",
+    str_detect(film, "Finding") ~ "Finding",
+    str_detect(film, "Incredibles") ~ "Incredibles",
+    TRUE ~ NA_character_
+  ))
+
+# Summary 
+film_series_df <- pixar_films %>%
+  filter(!is.na(series)) %>%
+  group_by(series) %>%
+  summarise(
+    films = paste(film, collapse = ", "),
+    num_films = n(),
+    .groups = "drop"
+  )
+
+print(film_series_df)
+```
 c)  Load the `public_response` dataframe into R. Convert the
     `cinema_score` variable into a factor while ensuring the factor
     levels are defined in ascending order, from the lowest to the
     highest score. Combine `public_response` with the `pixar_films`
     dataset using an appropriate merge variable.
+    
+```{r}
+
+# Check columns
+print(colnames(pixar_films))
+print(colnames(public_response))
+
+# Convert cinema_score into ordered factor
+cinema_levels <- c("F", "D-", "D", "D+", "C-", "C", "C+", "B-", "B", "B+", "A-", "A", "A+")
+public_response <- public_response %>%
+  mutate(cinema_score = factor(cinema_score, levels = cinema_levels, ordered = TRUE))
+
+# Select only necessary columns from public_response to avoid duplicates
+public_response_sel <- public_response %>%
+  select(film, cinema_score, rotten_tomatoes, metacritic, critics_choice)
+
+# Merge datasets by title (pixar_films) and film (public_response)
+combined_df <- left_join(pixar_films, public_response_sel, by = c("title" = "film"))
+
+# Check which films from pixar_films are missing in public_response
+missing_films <- pixar_films$title[!pixar_films$title %in% public_response_sel$film]
+print(missing_films)  # Films without matching public_response data
+
+# View result
+head(combined_df)
+```
 
 d)  Choose one of the variables representing the public response and
     create a bar plot for the films belonging to a series. Here are the
@@ -190,6 +208,31 @@ d)  Choose one of the variables representing the public response and
 
     What do you notice when comparing the scores of the films in a
     series? Do you see any patterns?
+```{r}
+# Filter films that are part of a series and have cinema_score data
+plot_data <- combined_df %>%
+  filter(!is.na(series), !is.na(cinema_score)) %>%
+  arrange(series, release_date) %>%
+  mutate(title = factor(title, levels = unique(title)))
+
+# Plot
+ggplot(plot_data, aes(x = series, fill = title, y = as.numeric(cinema_score))) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.9)) +
+  scale_y_continuous(breaks = 1:length(levels(public_response$cinema_score)),
+                     labels = levels(public_response$cinema_score)) +
+  labs(
+    title = "Cinema Scores by Film Series",
+    x = "Film Series",
+    y = "Cinema Score (Ordered)",
+    fill = "Film Title"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+The cinema scores show clear patterns across film series.
+Sequels in the Cars and Finding series tend to receive slightly lower scores than the original films.
+However, across all series, Pixar films generally maintain strong audience approval.
 
 ## Exercise 4: Open Analysis (4 points)
 
