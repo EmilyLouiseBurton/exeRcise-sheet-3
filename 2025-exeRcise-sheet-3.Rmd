@@ -253,25 +253,47 @@ Dataset chosen: https://github.com/owid/owid-datasets/tree/master/datasets/CO2%2
 library(tidyverse)
 
 
-co2_lifestyle <- read_csv("co2_footprint.csv")
+co2_lifestyle <- read.csv("/Users/emilyburton/2025-exeRcise-sheet-3/co2_footprint.csv")
 
-# View first rows
+
 head(co2_lifestyle)
 ```
 b)  Download the dataset and track it in git.
 c)  Put the name / title of the dataset and a link to it below.
 
--   Dataset Name: ...
--   Link: <https://github.com/owid/owid-datasets/>...
+-   Dataset Name: CO2 Footprint Breakdown Per Capita (Goodall 2011)
+-   Link: <https://github.com/owid/owid-datasets/blob/master/datasets/CO2%20Footprint%20Breakdown%20Per%20Capita%20-%20Goodall%20(2011)/CO2%20Footprint%20Breakdown%20Per%20Capita%20-%20Goodall%20(2011).csv>
 
 d)  Come up with a (research) question you want to answer with the data
     and briefly explain why you believe this is an interesting question
     within one sentence. It should be a question that can be answered
     with the dataset and using R.
+    
+    Question:
+    Which sector contributes the most to per capita CO2 footprint in 2011, 
+    and how do the contributions compare across sectors?
+
+    Why:
+    Understanding sector contributions helps target policies to reduce emissions effectively.
+    
 e)  Use R to answer your chosen question. Please limit your analysis to
     the functions and techniques we have covered so far in the course.
     You are **not expected** to use advanced statistical models or
     external packages which haven't been introduced.
+    
+    ```{r}
+df <- read.csv("co2_footprint.csv", stringsAsFactors = FALSE)
+
+# View the structure
+str(df)
+
+names(df) <- c("Entity", "Year", "Percent")
+df$CO2.Percent <- as.numeric(gsub("%", "", df$Percent))
+
+# Find the sector with the highest CO2 contribution
+max_sector <- df[which.max(df$CO2.Percent), ]
+print(max_sector)
+    ```
 f)  Create a meaningful plot / figure with the dataset. Make sure to
     provide a figure caption (via the chunk options / Rmarkdown) and
     correctly label the figure.
