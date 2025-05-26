@@ -297,7 +297,20 @@ print(max_sector)
 f)  Create a meaningful plot / figure with the dataset. Make sure to
     provide a figure caption (via the chunk options / Rmarkdown) and
     correctly label the figure.
+```{r}
+barplot(df$CO2.Percent,
+        names.arg = df$Entity,
+        las = 2,                      # Rotate labels
+        col = "skyblue",
+        main = "CO2 Footprint Breakdown per Capita by Sector (2011)",
+        ylab = "CO2 Contribution (%)",
+        cex.names = 0.8)
 
+text(x = seq_along(df$CO2.Percent),
+     y = df$CO2.Percent,
+     labels = paste0(df$CO2.Percent, "%"),
+     pos = 3, cex = 0.75, col = "darkblue")
+```
 ## Final Note
 
 Make sure to push all your commits and changes to GitHub before
