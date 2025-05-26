@@ -249,13 +249,14 @@ a)  Go to <https://github.com/owid/owid-datasets/tree/master/datasets>
 Dataset chosen: https://github.com/owid/owid-datasets/tree/master/datasets/CO2%20Footprint%20Breakdown%20Per%20Capita%20-%20Goodall%20(2011)
 
 ```{r}
+# Load tidyverse
 library(tidyverse)
 
-# Load the dataset
+
 co2_lifestyle <- read_csv("co2_footprint.csv")
 
-# Inspect the dataset
-glimpse(co2_lifestyle)
+# View first rows
+head(co2_lifestyle)
 ```
 b)  Download the dataset and track it in git.
 c)  Put the name / title of the dataset and a link to it below.
